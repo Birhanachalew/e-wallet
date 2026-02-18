@@ -24,11 +24,12 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 const PORT = process.env.PORT || 8080
 
-app.use(errorHandler)
 app.use('/api/users', require('./routes/userRoutes'))
 app.use('/api/', require('./routes/transactionRoutes'))
 app.use('/api/', require('./routes/requestRoutes'))
 app.use('/api/', require('./routes/uploadRoutes'))
+
+app.use(errorHandler)
 
 
 app.get('/', (req, res) => {

@@ -16,9 +16,8 @@ import Loader from '../Loader/Loader'
 const Widget = ({ type }) => {
   const [openModal, setOpenModal] = useState(false)
 
-  const { balance, moneySend, moneyReceived, requestReceived } = useSelector(
-    (state) => state.auth.user
-  )
+  const user = useSelector((state) => state.auth.user)
+  const { balance, moneySend, moneyReceived, requestReceived } = user || {}
 
   let data
 
@@ -94,6 +93,14 @@ const Widget = ({ type }) => {
 
   const addMoney = () => {
     setOpenModal(true)
+  }
+
+  if (!user) {
+    return (
+      <div className='widget'>
+        <Loader />
+      </div>
+    )
   }
 
   return (

@@ -16,7 +16,12 @@ export const uploadProfileImage = createAsyncThunk(
   'upload/profileUpdate',
   async (data, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token
+      const stateUser = thunkAPI.getState().auth.user
+      const token =
+        stateUser?.token || JSON.parse(localStorage.getItem('user'))?.token
+      if (!token) {
+        throw new Error('Not authorized, no token')
+      }
       return await uploadService.uploadImage(data, token)
     } catch (error) {
       const message =
@@ -33,7 +38,12 @@ export const getUserImage = createAsyncThunk(
   'upload/getUploadedImage',
   async (__, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token
+      const stateUser = thunkAPI.getState().auth.user
+      const token =
+        stateUser?.token || JSON.parse(localStorage.getItem('user'))?.token
+      if (!token) {
+        throw new Error('Not authorized, no token')
+      }
       return await uploadService.getUploadImage(token)
     } catch (error) {
       const message =

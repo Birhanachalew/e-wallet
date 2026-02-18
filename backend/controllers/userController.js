@@ -21,17 +21,24 @@ const register = asyncHandler(async (req, res) => {
     requestReceived,
   } = req.body
 
-  if (
-    !name ||
-    !email ||
-    !password ||
-    !phone ||
-    !address ||
-    !identificationType
-  ) {
-    res.status(400)
-    throw new Error('Please add all fields')
+  const requiredFields = {
+    name,
+    email,
+    password,
+    phone,
+    address,
   }
+
+  const missingFields = Object.entries(requiredFields)
+    .filter(([, value]) => !value)
+    .map(([key]) => key)
+
+  if (missingFields.length > 0) {
+    res.status(400)
+    throw new Error(`Please add all fields: ${missingFields.join(', ')}`)
+  }
+
+  const safeIdentificationType = identificationType || 'driver license'
 
   // Check if user exists
   const userExists = await User.findOne({ email })
@@ -53,7 +60,7 @@ const register = asyncHandler(async (req, res) => {
     password: hashedPassword,
     phone,
     address,
-    identificationType,
+    identificationType: safeIdentificationType,
     moneySend,
     moneyReceived,
     requestReceived,
@@ -165,8 +172,59 @@ const getImage = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc    update user profile
+// @route   PUT /api/users/profile
+// @access  Protect
+const updateProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id)
+
+  if (!user) {
+    res.status(404)
+    throw new Error('User not found')
+  }
+
+  if (req.body.email && req.body.email !== user.email) {
+    const emailExists = await User.findOne({ email: req.body.email })
+    if (emailExists) {
+      res.status(400)
+      throw new Error('Email already in use')
+    }
+  }
+
+  user.name = req.body.name || user.name
+  user.email = req.body.email || user.email
+  user.phone = req.body.phone || user.phone
+  user.address = req.body.address || user.address
+
+  if (req.body.password) {
+    const salt = await bcrypt.genSalt(10)
+    user.password = await bcrypt.hash(req.body.password, salt)
+  }
+
+  const updatedUser = await user.save()
+
+  res.status(200).json({
+    _id: updatedUser.id,
+    name: updatedUser.name,
+    balance: updatedUser.balance,
+    email: updatedUser.email,
+    phone: updatedUser.phone,
+    address: updatedUser.address,
+    moneySend: updatedUser.moneySend,
+    moneyReceived: updatedUser.moneyReceived,
+    requestReceived: updatedUser.requestReceived,
+    identificationType: updatedUser.identificationType,
+    identificationNumber: updatedUser.identificationNumber,
+    isAdmin: updatedUser.isAdmin,
+    isVerified: updatedUser.isVerified,
+    image: updatedUser.image,
+    token: generateToken(updatedUser._id),
+  })
+})
+
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  const jwtSecret = process.env.JWT_SECRET || 'dev_jwt_secret'
+  return jwt.sign({ id }, jwtSecret, {
     expiresIn: '30d',
   })
 }
@@ -178,4 +236,5 @@ module.exports = {
   getUsers,
   verify,
   getImage,
+  updateProfile,
 }

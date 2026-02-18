@@ -48,8 +48,37 @@ export const getusers = createAsyncThunk(
   'auth/getAllUsers',
   async (__, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token
+      const stateUser = thunkAPI.getState().auth.user
+      const token =
+        stateUser?.token || JSON.parse(localStorage.getItem('user'))?.token
+      if (!token) {
+        throw new Error('Not authorized, no token')
+      }
       return await authService.getAllUsers(token)
+    } catch (error) {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString()
+      return thunkAPI.rejectWithValue(message)
+    }
+  }
+)
+
+// @update profile
+export const updateUser = createAsyncThunk(
+  'auth/updateUser',
+  async (userData, thunkAPI) => {
+    try {
+      const stateUser = thunkAPI.getState().auth.user
+      const token =
+        stateUser?.token || JSON.parse(localStorage.getItem('user'))?.token
+      if (!token) {
+        throw new Error('Not authorized, no token')
+      }
+      return await authService.updateProfile(userData, token)
     } catch (error) {
       const message =
         (error.response &&
@@ -122,6 +151,19 @@ export const authSlice = createSlice({
         state.isError = true
         state.message = action.payload
         state.users = null
+      })
+      .addCase(updateUser.pending, (state) => {
+        state.isLoading = true
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.isSuccess = true
+        state.user = action.payload
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.isLoading = false
+        state.isError = true
+        state.message = action.payload
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null

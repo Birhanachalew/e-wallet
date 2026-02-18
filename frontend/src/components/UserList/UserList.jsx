@@ -22,6 +22,7 @@ const List = () => {
   const dispatch = useDispatch()
 
   const { users, isSuccess, isLoading } = useSelector((state) => state.auth)
+  const safeUsers = Array.isArray(users) ? users : []
 
   useEffect(() => {
     return () => {
@@ -73,7 +74,7 @@ const List = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((user) => (
+              {safeUsers.map((user) => (
                 <TableRow key={user._id}>
                   <TableCell className='tableCell'>{user._id}</TableCell>
                   <TableCell className='tableCell'>

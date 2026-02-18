@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Navbar from '../../components/Navbar/Navbar'
 import { useState } from 'react'
@@ -8,15 +8,47 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import {
   uploadProfileImage,
 } from '../../features/upload/uploadSlice'
+import { updateUser, reset } from '../../features/auth/authSlice'
 import Loader from '../../components/Loader/Loader'
 
 const Profile = () => {
   const dispatch = useDispatch()
 
-  const { name, _id, image } = useSelector((state) => state.auth.user)
+  const { user, isLoading, isError, isSuccess, message } = useSelector(
+    (state) => state.auth
+  )
+  const { name, _id, image, email, phone, address } = user || {}
   const { uploadLoading, uploadSuccess } = useSelector((state) => state.upload)
   const [file, setFile] = useState('')
   const [photo, setPhoto] = useState('')
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    address: '',
+  })
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: name || '',
+        email: email || '',
+        phone: phone || '',
+        password: '',
+        address: address || '',
+      })
+    }
+  }, [user, name, email, phone, address])
+
+  useEffect(() => {
+    if (isError) {
+      alert(message)
+    }
+    if (isSuccess) {
+      dispatch(reset())
+    }
+  }, [dispatch, isError, isSuccess, message])
 
   const previewFiles = (file) => {
     const reader = new FileReader()
@@ -40,6 +72,29 @@ const Profile = () => {
       photo: photo,
     }
     dispatch(uploadProfileImage(data))
+  }
+
+  const onChange = (e) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const onSubmit = (e) => {
+    e.preventDefault()
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+    }
+
+    if (formData.password) {
+      payload.password = formData.password
+    }
+
+    dispatch(updateUser(payload))
   }
 
   return (
@@ -79,12 +134,14 @@ const Profile = () => {
           </div>
           <div className='profileDetails'>
             <h1>details</h1>
-            <form onSubmit={onsubmit}>
+            <form onSubmit={onSubmit}>
               <div className='form__control'>
                 <input
                   type='text'
                   name='name'
                   id='name'
+                  value={formData.name}
+                  onChange={onChange}
                   placeholder='please enter name'
                   required
                 />
@@ -94,6 +151,8 @@ const Profile = () => {
                   type='email'
                   name='email'
                   id='email'
+                  value={formData.email}
+                  onChange={onChange}
                   placeholder='please enter email'
                   required
                 />
@@ -103,6 +162,8 @@ const Profile = () => {
                   type='text'
                   name='phone'
                   id='phone'
+                  value={formData.phone}
+                  onChange={onChange}
                   placeholder='please enter phone'
                   required
                 />
@@ -112,8 +173,9 @@ const Profile = () => {
                   type='password'
                   name='password'
                   id='password'
-                  placeholder='please enter password'
-                  required
+                  value={formData.password}
+                  onChange={onChange}
+                  placeholder='leave blank to keep password'
                 />
               </div>
               <div className='form__control'>
@@ -121,12 +183,14 @@ const Profile = () => {
                   type='text'
                   name='address'
                   id='address'
+                  value={formData.address}
+                  onChange={onChange}
                   placeholder='type address'
                   required
                 />
               </div>
               <div className='form__control button-container'>
-                <button className='btn'>Save</button>
+                <button className='btn' disabled={isLoading}>Save</button>
               </div>
             </form>
           </div>
