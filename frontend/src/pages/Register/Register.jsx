@@ -12,7 +12,7 @@ const Register = () => {
     password: '',
     phone: '',
     address: '',
-    identificationType: '',
+    identificationType: 'driver license',
   })
 
   const { name, email, password, phone, address, identificationType } = formData
@@ -116,7 +116,8 @@ const Register = () => {
                 name='identificationType'
                 id='identificationType'
                 value={identificationType}
-                onChange={onChange}>
+                onChange={onChange}
+                required>
                 <option value='driver license'>driver license</option>
                 <option value='passport'>passport</option>
                 <option value='national ID'>national ID</option>
